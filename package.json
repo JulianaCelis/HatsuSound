@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Backend con arquitectura hexagonal para HatsuSound usando NestJS",
   "main": "dist/main.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -11,15 +15,23 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "db:migrate": "npm run typeorm migration:run",
-    "db:revert": "npm run typeorm migration:revert",
-    "db:generate": "npm run typeorm migration:generate",
-    "db:create": "npm run typeorm migration:create"
+    "db:migrate": "typeorm-ts-node-commonjs migration:run -d src/infrastructure/database/ormconfig.ts",
+    "db:revert": "typeorm-ts-node-commonjs migration:revert -d src/infrastructure/database/ormconfig.ts",
+    "db:generate": "typeorm-ts-node-commonjs migration:generate -d src/infrastructure/database/ormconfig.ts",
+    "db:create": "typeorm-ts-node-commonjs migration:create -d src/infrastructure/database/ormconfig.ts",
+    "db:start": "docker-compose up -d",
+    "db:stop": "docker-compose down",
+    "db:logs": "docker-compose logs -f postgres",
+    "db:reset": "docker-compose down -v && docker-compose up -d",
+    "clean": "rimraf dist coverage",
+    "prebuild": "npm run clean",
+    "postinstall": "npm run build"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -66,7 +78,8 @@
     "ts-loader": "^9.4.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.1.0",
-    "typescript": "^5.1.3"
+    "typescript": "^5.1.3",
+    "rimraf": "^5.0.0"
   },
   "jest": {
     "moduleFileExtensions": ["js", "json", "ts"],
@@ -77,6 +90,21 @@
     },
     "collectCoverageFrom": ["**/*.(t|j)s"],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["<rootDir>/test/setup.ts"]
+  },
+  "keywords": [
+    "nestjs",
+    "typescript",
+    "hexagonal-architecture",
+    "postgresql",
+    "jwt",
+    "authentication"
+  ],
+  "author": "HatsuSound Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hatsusound/backend.git"
   }
 }
