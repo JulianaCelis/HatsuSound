@@ -3,6 +3,8 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerConfig, swaggerOptions } from './infrastructure/config/swagger.config';
+import { AuthExceptionFilter } from './infrastructure/common/filters/auth-exception.filter';
+import { AuthLoggingInterceptor } from './infrastructure/common/interceptors/auth-logging.interceptor';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -18,6 +20,12 @@ async function bootstrap() {
       enableImplicitConversion: true,
     },
   }));
+
+  // Global filters
+  app.useGlobalFilters(new AuthExceptionFilter());
+
+  // Global interceptors
+  app.useGlobalInterceptors(new AuthLoggingInterceptor());
 
   // CORS
   app.enableCors({
@@ -38,6 +46,7 @@ async function bootstrap() {
   
   logger.log(`🚀 Application is running on: http://localhost:${port}`);
   logger.log(`📚 Swagger docs: http://localhost:${port}/api`);
+  logger.log(`🔐 Auth system fully implemented with refresh tokens, roles, and security middleware`);
 }
 
 bootstrap();

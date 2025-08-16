@@ -1,59 +1,120 @@
 import { Controller, Get, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiUnauthorizedResponse, ApiNotFoundResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiUnauthorizedResponse, ApiForbiddenResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GetProfileUseCase } from '@/application/use-cases/auth';
-import { UserResponseDto } from '../common/dtos/auth.dto';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { UserRole } from '../database/entities/user.entity';
+import { UserResponseSchema } from '../common/schemas/user.schema';
 
 @ApiTags('users')
 @Controller('users')
 export class UserController {
-  constructor(
-    private readonly getProfileUseCase: GetProfileUseCase,
-  ) {}
+  constructor() {}
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ 
-    summary: 'Obtener perfil del usuario autenticado',
-    description: 'Retorna la información del usuario autenticado (requiere JWT token)'
+    summary: 'Obtener perfil del usuario',
+    description: 'Obtiene el perfil del usuario autenticado'
   })
   @ApiResponse({ 
     status: 200, 
     description: 'Perfil obtenido exitosamente',
+    type: UserResponseSchema
+  })
+  @ApiUnauthorizedResponse({ 
+    description: 'No autorizado'
+  })
+  async getProfile(@Request() req) {
+    return req.user;
+  }
+
+  @Get('admin-only')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Endpoint solo para administradores',
+    description: 'Solo usuarios con rol ADMIN pueden acceder'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Acceso permitido',
     schema: {
       type: 'object',
       properties: {
+        message: {
+          type: 'string',
+          example: 'Acceso permitido para administradores'
+        },
         user: {
-          $ref: '#/components/schemas/UserResponseDto'
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            role: { type: 'string' }
+          }
         }
       }
     }
   })
   @ApiUnauthorizedResponse({ 
-    description: 'Token JWT inválido o expirado',
+    description: 'No autorizado'
+  })
+  @ApiForbiddenResponse({ 
+    description: 'Acceso denegado - Rol insuficiente'
+  })
+  async adminOnly(@Request() req) {
+    return {
+      message: 'Acceso permitido para administradores',
+      user: {
+        id: req.user.id,
+        role: req.user.role
+      }
+    };
+  }
+
+  @Get('moderator-or-admin')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.MODERATOR, UserRole.ADMIN)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ 
+    summary: 'Endpoint para moderadores y administradores',
+    description: 'Usuarios con rol MODERATOR o ADMIN pueden acceder'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Acceso permitido',
     schema: {
       type: 'object',
       properties: {
-        statusCode: { type: 'number', example: 401 },
-        message: { type: 'string', example: 'Unauthorized' },
-        error: { type: 'string', example: 'Unauthorized' }
+        message: {
+          type: 'string',
+          example: 'Acceso permitido para moderadores y administradores'
+        },
+        user: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            role: { type: 'string' }
+          }
+        }
       }
     }
   })
-  @ApiNotFoundResponse({ 
-    description: 'Usuario no encontrado',
-    schema: {
-      type: 'object',
-      properties: {
-        statusCode: { type: 'number', example: 404 },
-        message: { type: 'string', example: 'Usuario no encontrado' },
-        error: { type: 'string', example: 'Not Found' }
-      }
-    }
+  @ApiUnauthorizedResponse({ 
+    description: 'No autorizado'
   })
-  async getProfile(@Request() req) {
-    return await this.getProfileUseCase.execute({ userId: req.user.id });
+  @ApiForbiddenResponse({ 
+    description: 'Acceso denegado - Rol insuficiente'
+  })
+  async moderatorOrAdmin(@Request() req) {
+    return {
+      message: 'Acceso permitido para moderadores y administradores',
+      user: {
+        id: req.user.id,
+        role: req.user.role
+      }
+    };
   }
 }

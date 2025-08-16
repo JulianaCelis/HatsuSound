@@ -2,10 +2,14 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from '../services/auth.service';
 import { AuthController } from '../controllers/auth.controller';
 import { JwtStrategy } from '../auth/strategies/jwt.strategy';
 import { LocalStrategy } from '../auth/strategies/local.strategy';
+import { RefreshTokenService } from '../services/refresh-token.service';
+import { RefreshTokenRepository } from '../repositories/refresh-token.repository';
+import { RefreshTokenEntity } from '../database/entities/refresh-token.entity';
 import { UserModule } from './user.module';
 import { RegisterUseCase, LoginUseCase } from '@/application/use-cases/auth';
 
@@ -13,6 +17,7 @@ import { RegisterUseCase, LoginUseCase } from '@/application/use-cases/auth';
   imports: [
     UserModule,
     PassportModule,
+    TypeOrmModule.forFeature([RefreshTokenEntity]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -25,11 +30,13 @@ import { RegisterUseCase, LoginUseCase } from '@/application/use-cases/auth';
   controllers: [AuthController],
   providers: [
     AuthService,
+    RefreshTokenService,
+    RefreshTokenRepository,
     JwtStrategy,
     LocalStrategy,
     RegisterUseCase,
     LoginUseCase,
   ],
-  exports: [AuthService],
+  exports: [AuthService, RefreshTokenService],
 })
 export class AuthModule {}
