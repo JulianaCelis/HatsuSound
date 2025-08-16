@@ -1,5 +1,5 @@
-import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
-import { IUserService } from '@/domain/services/user.service.interface';
+import { Injectable, BadRequestException, ConflictException, Inject } from '@nestjs/common';
+import { IUserService, USER_SERVICE } from '@/domain/services/user.service.interface';
 import { User } from '@/domain/entities/user.entity';
 
 export interface RegisterRequest {
@@ -8,6 +8,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  role?: string; // Rol opcional
 }
 
 export interface RegisterResponse {
@@ -17,10 +18,13 @@ export interface RegisterResponse {
 
 @Injectable()
 export class RegisterUseCase {
-  constructor(private readonly userService: IUserService) {}
+  constructor(
+    @Inject(USER_SERVICE)
+    private readonly userService: IUserService
+  ) {}
 
   async execute(request: RegisterRequest): Promise<RegisterResponse> {
-    const { email, username, password, firstName, lastName } = request;
+    const { email, username, password, firstName, lastName, role } = request;
 
     // Validaciones de negocio
     if (!email || !username || !password || !firstName || !lastName) {
@@ -49,6 +53,7 @@ export class RegisterUseCase {
       password,
       firstName,
       lastName,
+      role as any, // Pasar el rol del request
     );
 
     // Retornar usuario sin password

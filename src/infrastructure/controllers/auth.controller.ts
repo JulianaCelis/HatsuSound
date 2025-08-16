@@ -3,7 +3,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBadRequestResponse, Api
 import { AuthService } from '../services/auth.service';
 import { LocalAuthGuard } from '../auth/guards/local-auth.guard';
 import { RegisterUseCase, LoginUseCase } from '@/application/use-cases/auth';
-import { RegisterDto, LoginDto, UserResponseDto } from '../common/dtos/auth.dto';
+import { RegisterDto, LoginDto } from '../common/dtos/auth.dto';
+import { UserResponseSchema } from '../common/schemas/user.schema';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -31,7 +32,7 @@ export class AuthController {
       type: 'object',
       properties: {
         user: {
-          $ref: '#/components/schemas/UserResponseDto'
+          $ref: '#/components/schemas/UserResponseSchema'
         },
         message: {
           type: 'string',
@@ -92,7 +93,7 @@ export class AuthController {
           example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
         },
         user: {
-          $ref: '#/components/schemas/UserResponseDto'
+          $ref: '#/components/schemas/UserResponseSchema'
         }
       }
     }

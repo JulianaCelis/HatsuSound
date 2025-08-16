@@ -1,6 +1,7 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Inject } from '@nestjs/common';
 import { IUserService } from '@/domain/services/user.service.interface';
 import { User } from '@/domain/entities/user.entity';
+import { USER_SERVICE } from '@/domain/services/user.service.interface';
 
 export interface LoginRequest {
   emailOrUsername: string;
@@ -15,7 +16,10 @@ export interface LoginResponse {
 
 @Injectable()
 export class LoginUseCase {
-  constructor(private readonly userService: IUserService) {}
+  constructor(
+    @Inject(USER_SERVICE)
+    private readonly userService: IUserService
+  ) {}
 
   async execute(request: LoginRequest): Promise<LoginResponse> {
     const { emailOrUsername, password } = request;

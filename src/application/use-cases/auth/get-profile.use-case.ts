@@ -1,5 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { IUserService } from '@/domain/services/user.service.interface';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
+import { IUserService, USER_SERVICE } from '@/domain/services/user.service.interface';
 import { User } from '@/domain/entities/user.entity';
 
 export interface GetProfileRequest {
@@ -12,7 +12,10 @@ export interface GetProfileResponse {
 
 @Injectable()
 export class GetProfileUseCase {
-  constructor(private readonly userService: IUserService) {}
+  constructor(
+    @Inject(USER_SERVICE)
+    private readonly userService: IUserService
+  ) {}
 
   async execute(request: GetProfileRequest): Promise<GetProfileResponse> {
     const { userId } = request;

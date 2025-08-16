@@ -86,7 +86,12 @@ export class UserRepository implements IUserRepository {
 
   private mapToEntity(user: User): UserEntity {
     const entity = new UserEntity();
-    entity.id = user.id;
+    
+    // Solo asignar ID si existe (para actualizaciones)
+    if (user.id) {
+      entity.id = user.id;
+    }
+    
     entity.email = user.email;
     entity.username = user.username;
     entity.password = user.password;
@@ -94,8 +99,15 @@ export class UserRepository implements IUserRepository {
     entity.lastName = user.lastName;
     entity.isActive = user.isActive;
     entity.role = user.role;
-    entity.createdAt = user.createdAt;
-    entity.updatedAt = user.updatedAt;
+    
+    // Solo asignar fechas si existen (para actualizaciones)
+    if (user.createdAt) {
+      entity.createdAt = user.createdAt;
+    }
+    if (user.updatedAt) {
+      entity.updatedAt = user.updatedAt;
+    }
+    
     return entity;
   }
 

@@ -5,6 +5,7 @@ import { UserService } from '../services/user.service';
 import { UserRepository } from '../repositories/user.repository';
 import { UserEntity } from '../database/entities/user.entity';
 import { GetProfileUseCase } from '@/application/use-cases/auth';
+import { USER_SERVICE } from '@/domain/services/user.service.interface';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserEntity])],
@@ -12,8 +13,12 @@ import { GetProfileUseCase } from '@/application/use-cases/auth';
   providers: [
     UserService,
     UserRepository,
+    {
+      provide: USER_SERVICE,
+      useClass: UserService,
+    },
     GetProfileUseCase,
   ],
-  exports: [UserService, UserRepository],
+  exports: [UserService, UserRepository, USER_SERVICE],
 })
 export class UserModule {}

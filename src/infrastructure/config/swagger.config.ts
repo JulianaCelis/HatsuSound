@@ -1,4 +1,5 @@
 import { DocumentBuilder, SwaggerDocumentOptions } from '@nestjs/swagger';
+import { UserResponseSchema } from '../common/schemas/user.schema';
 
 export const swaggerConfig = new DocumentBuilder()
   .setTitle('HatsuSound API')
@@ -50,5 +51,5 @@ export const swaggerConfig = new DocumentBuilder()
 
 export const swaggerOptions: SwaggerDocumentOptions = {
   operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
-  extraModels: [],
+  extraModels: [UserResponseSchema],
 };

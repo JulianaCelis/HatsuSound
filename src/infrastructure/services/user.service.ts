@@ -3,6 +3,7 @@ import * as bcrypt from 'bcryptjs';
 import { IUserService } from '@/domain/services/user.service.interface';
 import { User, UserRole } from '@/domain/entities/user.entity';
 import { UserRepository } from '../repositories/user.repository';
+import { UserEntity } from '../database/entities/user.entity';
 
 @Injectable()
 export class UserService implements IUserService {
@@ -14,10 +15,32 @@ export class UserService implements IUserService {
     password: string,
     firstName: string,
     lastName: string,
+    role?: UserRole,
   ): Promise<User> {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = User.create(email, username, hashedPassword, firstName, lastName);
-    return await this.userRepository.save(user);
+    
+    // Usar el método create de la entidad User
+    const userData = User.create(email, username, hashedPassword, firstName, lastName);
+    
+    // Crear un objeto User temporal para pasar al repositorio
+    const tempUser = new User(
+      '', // ID vacío - la BD lo generará
+      userData.email,
+      userData.username,
+      userData.password,
+      userData.firstName,
+      userData.lastName,
+      userData.isActive,
+      role || userData.role, // Usar el rol del request o USER por defecto
+      new Date(), // createdAt
+      new Date(), // updatedAt
+    );
+    
+    // Guardar en la BD
+    const savedEntity = await this.userRepository.save(tempUser);
+    
+    // Retornar la entidad de dominio
+    return savedEntity;
   }
 
   async getUserById(id: string): Promise<User | null> {
