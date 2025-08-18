@@ -1,16 +1,10 @@
-import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
+import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-
-interface RateLimitStore {
-  [key: string]: {
-    count: number;
-    resetTime: number;
-  };
-}
+import { TooManyRequestsException } from '../exceptions/custom.exceptions';
 
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
-  private store: RateLimitStore = {};
+  private store: { [key: string]: { count: number; resetTime: number; } } = {};
   private readonly windowMs = 15 * 60 * 1000; // 15 minutos
   private readonly maxRequests = 100; // 100 requests por ventana
 
@@ -21,19 +15,16 @@ export class RateLimitMiddleware implements NestMiddleware {
     // Limpiar entradas expiradas
     this.cleanup();
 
+    // Obtener o crear entrada para esta IP
     if (!this.store[key]) {
-      this.store[key] = {
-        count: 0,
-        resetTime: now + this.windowMs,
-      };
+      this.store[key] = { count: 0, resetTime: now + this.windowMs };
     }
 
-    // Si la ventana ha expirado, resetear
+    // Verificar si la ventana de tiempo ha expirado
     if (now > this.store[key].resetTime) {
-      this.store[key] = {
-        count: 0,
-        resetTime: now + this.windowMs,
-      };
+      this.store[key] = { count: 1, resetTime: now + this.windowMs };
+      next();
+      return;
     }
 
     // Incrementar contador
@@ -41,30 +32,32 @@ export class RateLimitMiddleware implements NestMiddleware {
 
     // Verificar límite
     if (this.store[key].count > this.maxRequests) {
-      throw new HttpException(
-        'Too Many Requests - Rate limit exceeded',
-        HttpStatus.TOO_MANY_REQUESTS,
+      // Agregar headers de rate limit
+      res.set('X-RateLimit-Limit', this.maxRequests.toString());
+      res.set('X-RateLimit-Remaining', '0');
+      res.set('X-RateLimit-Reset', new Date(this.store[key].resetTime).toISOString());
+      
+      throw new TooManyRequestsException(
+        `Has excedido el límite de ${this.maxRequests} requests por ${this.windowMs / 60000} minutos`,
+        {
+          limit: this.maxRequests,
+          windowMs: this.windowMs,
+          retryAfter: Math.ceil((this.store[key].resetTime - now) / 1000),
+        }
       );
     }
 
     // Agregar headers de rate limit
-    res.setHeader('X-RateLimit-Limit', this.maxRequests);
-    res.setHeader('X-RateLimit-Remaining', this.maxRequests - this.store[key].count);
-    res.setHeader('X-RateLimit-Reset', this.store[key].resetTime);
+    res.set('X-RateLimit-Limit', this.maxRequests.toString());
+    res.set('X-RateLimit-Remaining', (this.maxRequests - this.store[key].count).toString());
+    res.set('X-RateLimit-Reset', new Date(this.store[key].resetTime).toISOString());
 
     next();
   }
 
   private getKey(req: Request): string {
     // Usar IP del usuario como clave
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    
-    // Para endpoints de auth, usar IP + endpoint
-    if (req.path.includes('/auth/')) {
-      return `${ip}:${req.path}`;
-    }
-    
-    return ip;
+    return req.ip || req.connection.remoteAddress || 'unknown';
   }
 
   private cleanup() {

@@ -3,13 +3,16 @@ import { AppModule } from './app.module';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import { swaggerConfig, swaggerOptions } from './infrastructure/config/swagger.config';
-import { AuthExceptionFilter } from './infrastructure/common/filters/auth-exception.filter';
+import { GlobalExceptionFilter } from './infrastructure/common/filters/global-exception.filter';
 import { AuthLoggingInterceptor } from './infrastructure/common/interceptors/auth-logging.interceptor';
+import { ValidationException } from './infrastructure/common/exceptions/custom.exceptions';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['log', 'error', 'warn', 'debug', 'verbose'],
+  });
   
   // Global pipes
   app.useGlobalPipes(new ValidationPipe({
@@ -19,10 +22,17 @@ async function bootstrap() {
     transformOptions: {
       enableImplicitConversion: true,
     },
+    exceptionFactory: (errors) => {
+      const messages = errors.map(error => 
+        Object.values(error.constraints || {}).join(', ')
+      ).join('; ');
+      
+      return new ValidationException(messages, { validationErrors: errors });
+    },
   }));
 
-  // Global filters
-  app.useGlobalFilters(new AuthExceptionFilter());
+  // Global filters - Usar el filtro global en lugar del específico de auth
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Global interceptors
   app.useGlobalInterceptors(new AuthLoggingInterceptor());
@@ -41,7 +51,7 @@ async function bootstrap() {
     logger.log('Swagger documentation available at /api');
   }
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.PORT || 3001;
   await app.listen(port);
   
   logger.log(`🚀 Application is running on: http://localhost:${port}`);
