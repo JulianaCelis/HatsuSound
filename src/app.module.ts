@@ -7,6 +7,7 @@ import { AuthModule } from './infrastructure/modules/auth.module';
 import { LoggerMiddleware } from './infrastructure/common/middleware/logger.middleware';
 import { RateLimitMiddleware } from './infrastructure/common/middleware/rate-limit.middleware';
 import { TokenCleanupService } from './infrastructure/services/token-cleanup.service';
+import { HealthController } from './infrastructure/controllers/health.controller';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { TokenCleanupService } from './infrastructure/services/token-cleanup.ser
     UserModule,
     AuthModule,
   ],
-  controllers: [],
+  controllers: [HealthController],
   providers: [TokenCleanupService],
 })
 export class AppModule {
