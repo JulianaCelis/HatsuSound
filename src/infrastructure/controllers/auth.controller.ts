@@ -8,7 +8,7 @@ import { RegisterDto, LoginDto } from '../common/dtos/auth.dto';
 import { UserResponseSchema } from '../common/schemas/user.schema';
 
 @ApiTags('auth')
-@Controller('auth')
+@Controller('api/auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

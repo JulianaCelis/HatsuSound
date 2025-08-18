@@ -7,7 +7,7 @@ import { UserRole } from '../database/entities/user.entity';
 import { UserResponseSchema } from '../common/schemas/user.schema';
 
 @ApiTags('users')
-@Controller('users')
+@Controller('api/users')
 export class UserController {
   constructor() {}
 
