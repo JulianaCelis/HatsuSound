@@ -9,3 +9,6 @@ export * from './common/interceptors/transform.interceptor';
 export * from './config/database.config';
 export * from './config/jwt.config';
 export * from './config/app.config';
+export * from './services/audio-product.service';
+export * from './dto/audio-product.dto';
+export * from './controllers/health.controller';
