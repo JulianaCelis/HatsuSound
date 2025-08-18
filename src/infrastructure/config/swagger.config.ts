@@ -45,7 +45,7 @@ export const swaggerConfig = new DocumentBuilder()
   )
   .addTag('auth', 'Endpoints de autenticación y autorización')
   .addTag('users', 'Gestión de usuarios y perfiles')
-  .addServer('http://localhost:3000', 'Servidor de desarrollo')
+  .addServer(`http://localhost:${process.env.PORT || 3001}`, 'Servidor de desarrollo')
   .addServer('https://api.hatsusound.com', 'Servidor de producción')
   .build();
 

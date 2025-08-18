@@ -1,21 +1,37 @@
-import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Repository, EntityTarget, DataSource } from 'typeorm';
+import { BaseEntity } from './base.entity';
 import { IBaseRepository } from '@/domain/repositories/base.repository.interface';
-import { BaseEntity as DomainBaseEntity } from '@/domain/entities/base.entity';
-import { BaseEntity as InfrastructureBaseEntity } from './base.entity';
 
-@Injectable()
-export abstract class BaseRepository<T extends DomainBaseEntity, E extends InfrastructureBaseEntity> 
-  implements IBaseRepository<T> {
-  
-  constructor(protected readonly repository: Repository<E>) {}
+export abstract class BaseRepository<T extends BaseEntity> implements IBaseRepository<T> {
+  protected repository: Repository<T>;
 
-  abstract save(entity: T): Promise<T>;
-  abstract findById(id: string): Promise<T | null>;
-  abstract findAll(): Promise<T[]>;
-  abstract update(id: string, entity: Partial<T>): Promise<T | null>;
-  abstract delete(id: string): Promise<boolean>;
+  constructor(
+    private readonly entity: EntityTarget<T>,
+    private readonly dataSource: DataSource
+  ) {
+    this.repository = this.dataSource.getRepository(this.entity);
+  }
 
-  protected abstract mapToEntity(domain: T): E;
-  protected abstract mapToDomain(entity: E): T;
+  async save(entity: T): Promise<T> {
+    return await this.repository.save(entity);
+  }
+
+  async findById(id: string): Promise<T | null> {
+    return await this.repository.findOne({ where: { id } as any });
+  }
+
+  async findAll(): Promise<T[]> {
+    return await this.repository.find();
+  }
+
+  async update(id: string, entityData: Partial<T>): Promise<T | null> {
+    await this.repository.update(id, entityData as any);
+    return await this.findById(id);
+  }
+
+  async delete(id: string): Promise<boolean> {
+    const result = await this.repository.delete(id);
+    return result.affected !== 0;
+  }
 }
+
