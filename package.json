@@ -38,6 +38,14 @@
     "test:checkout:unit": "jest --testPathPattern=checkout.use-case.spec.ts",
     "test:checkout:e2e": "jest --config ./test/jest-e2e.json --testPathPattern=checkout.e2e-spec.ts",
     "test:checkout:all": "npm run test:checkout:unit && npm run test:checkout:e2e && npm run test:checkout",
+    "test:user:entity": "jest --testPathPattern=user.entity.spec.ts",
+    "test:user:service": "jest --testPathPattern=user.service.spec.ts",
+    "test:user:repository": "jest --testPathPattern=user.repository.spec.ts",
+    "test:user:auth": "jest --testPathPattern=auth.use-cases.spec.ts",
+    "test:user:integration": "jest --testPathPattern=user.integration.spec.ts",
+    "test:user:all": "npm run test:user:entity && npm run test:user:service && npm run test:user:repository && npm run test:user:auth && npm run test:user:integration",
+    "test:user:unit": "npm run test:user:entity && npm run test:user:service && npm run test:user:repository && npm run test:user:auth",
+    "test:user:coverage": "jest --coverage --testPathPattern=user",
     "migration:run": "npm run db:migrate",
     "migration:revert": "npm run db:revert",
     "migration:generate": "npm run db:generate",
@@ -116,7 +124,10 @@
     "testEnvironment": "node",
     "setupFilesAfterEnv": [
       "<rootDir>/test/setup.ts"
-    ]
+    ],
+    "moduleNameMapper": {
+      "^@/(.*)$": "<rootDir>/src/$1"
+    }
   },
   "keywords": [
     "nestjs",
