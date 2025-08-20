@@ -29,6 +29,19 @@
     "db:stop": "docker-compose down",
     "db:logs": "docker-compose logs -f postgres",
     "db:reset": "docker-compose down -v && docker-compose up -d",
+    "db:seed": "ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/run-seeds.ts",
+    "db:init": "bash scripts/init-db.sh",
+    "db:init:win": "scripts\\init-db.bat",
+    "wompi:validate": "ts-node -r tsconfig-paths/register src/scripts/validate-wompi-config.ts",
+    "test:jwt": "ts-node -r tsconfig-paths/register src/scripts/test-jwt-auth.ts",
+    "test:checkout": "ts-node -r tsconfig-paths/register src/scripts/test-checkout.ts",
+    "test:checkout:unit": "jest --testPathPattern=checkout.use-case.spec.ts",
+    "test:checkout:e2e": "jest --config ./test/jest-e2e.json --testPathPattern=checkout.e2e-spec.ts",
+    "test:checkout:all": "npm run test:checkout:unit && npm run test:checkout:e2e && npm run test:checkout",
+    "migration:run": "npm run db:migrate",
+    "migration:revert": "npm run db:revert",
+    "migration:generate": "npm run db:generate",
+    "seed:run": "npm run db:seed",
     "clean": "rimraf dist coverage",
     "prebuild": "npm run clean",
     "postinstall": "npm run build"
@@ -43,16 +56,18 @@
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/swagger": "^7.1.16",
     "@nestjs/typeorm": "^10.0.0",
+    "axios": "^1.11.0",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.0",
+    "class-validator": "^0.14.2",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.11.3",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
-    "typeorm": "^0.3.17"
+    "typeorm": "^0.3.17",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
@@ -66,6 +81,7 @@
     "@types/passport-local": "^1.0.35",
     "@types/pg": "^8.10.2",
     "@types/supertest": "^2.0.12",
+    "@types/uuid": "^9.0.7",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.42.0",
@@ -88,7 +104,7 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -96,7 +112,7 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
+    "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "setupFilesAfterEnv": [
       "<rootDir>/test/setup.ts"

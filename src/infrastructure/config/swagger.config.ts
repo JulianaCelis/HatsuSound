@@ -11,6 +11,12 @@ export const swaggerConfig = new DocumentBuilder()
     - **Login**: Iniciar sesión y obtener JWT token
     - **Profile**: Obtener perfil del usuario autenticado
     
+    ### 🔑 Cómo usar la autenticación:
+    1. Haz clic en el botón **🔒 Authorize** (candado) en la parte superior derecha
+    2. Ingresa tu JWT token en el formato: \`Bearer tu_token_aqui\`
+    3. Haz clic en **Authorize**
+    4. Ahora puedes acceder a todos los endpoints protegidos
+    
     ### 👥 Roles de Usuario
     - **USER**: Usuario básico (por defecto)
     - **MODERATOR**: Moderador con permisos extendidos
@@ -37,8 +43,8 @@ export const swaggerConfig = new DocumentBuilder()
       type: 'http',
       scheme: 'bearer',
       bearerFormat: 'JWT',
-      name: 'JWT',
-      description: 'Enter JWT token',
+      name: 'Authorization',
+      description: 'Ingresa tu JWT token. Ejemplo: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
       in: 'header',
     },
     'JWT-auth',
