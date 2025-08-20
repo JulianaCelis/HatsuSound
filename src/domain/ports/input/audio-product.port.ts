@@ -1,4 +1,4 @@
-import { AudioProduct } from '../../entities/audio-product.entity';
+import { AudioProduct, AudioGenre, AudioFormat, AgeRestriction } from '../../entities/audio-product.entity';
 import { Result, Success, Failure } from '@/domain/ports';
 
 // Tipos de request/response
@@ -6,10 +6,10 @@ export interface CreateAudioProductRequest {
   title: string;
   description: string;
   artist: string;
-  genre: string;
+  genre: AudioGenre;
   audioUrl: string;
   duration: number;
-  format: string;
+  format: AudioFormat;
   bitrate: number;
   price: number;
   stock: number;
@@ -17,17 +17,17 @@ export interface CreateAudioProductRequest {
   releaseDate: Date;
   language: string;
   isExplicit?: boolean;
-  ageRestriction?: number;
+  ageRestriction?: AgeRestriction;
 }
 
 export interface UpdateAudioProductRequest {
   title?: string;
   description?: string;
   artist?: string;
-  genre?: string;
+  genre?: AudioGenre;
   audioUrl?: string;
   duration?: number;
-  format?: string;
+  format?: AudioFormat;
   bitrate?: number;
   price?: number;
   stock?: number;
@@ -35,7 +35,7 @@ export interface UpdateAudioProductRequest {
   releaseDate?: Date;
   language?: string;
   isExplicit?: boolean;
-  ageRestriction?: number;
+  ageRestriction?: AgeRestriction;
   isActive?: boolean;
 }
 
@@ -44,10 +44,10 @@ export interface AudioProductResponse {
   title: string;
   description: string;
   artist: string;
-  genre: string;
+  genre: AudioGenre;
   audioUrl: string;
   duration: number;
-  format: string;
+  format: AudioFormat;
   bitrate: number;
   price: number;
   stock: number;
@@ -56,7 +56,7 @@ export interface AudioProductResponse {
   releaseDate: Date;
   language: string;
   isExplicit: boolean;
-  ageRestriction: number;
+  ageRestriction: AgeRestriction;
   playCount: number;
   downloadCount: number;
   createdAt: Date;
@@ -73,7 +73,7 @@ export interface AudioProductListResponse {
 
 export interface SearchAudioProductsRequest {
   query?: string;
-  genre?: string;
+  genre?: AudioGenre;
   artist?: string;
   minPrice?: number;
   maxPrice?: number;

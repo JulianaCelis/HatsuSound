@@ -1,458 +1,138 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, Between } from 'typeorm';
-import { v4 as uuidv4 } from 'uuid';
-import { AudioProduct } from '../database/entities/audio-product.entity';
+import { Repository } from 'typeorm';
+import { AudioProductEntity } from '../database/entities/audio-product.entity';
 import { IAudioProductRepositoryPort } from '@/domain/ports/output/audio-product.repository.port';
 import { AudioProductError } from '@/domain/ports/input/audio-product.port';
 import { Result, Success, Failure } from '@/domain/ports';
+import { AudioProduct } from '@/domain/entities/audio-product.entity';
+import { CreateAudioProductRequest, UpdateAudioProductRequest, SearchAudioProductsRequest } from '@/domain/ports/input/audio-product.port';
 
 @Injectable()
 export class AudioProductRepository implements IAudioProductRepositoryPort {
   constructor(
-    @InjectRepository(AudioProduct)
-    private readonly audioProductRepository: Repository<AudioProduct>
+    @InjectRepository(AudioProductEntity)
+    private readonly repository: Repository<AudioProductEntity>,
   ) {}
 
-  async create(product: any): Promise<Result<AudioProduct, AudioProductError>> {
+  async create(audioProductData: CreateAudioProductRequest): Promise<Result<AudioProduct, AudioProductError>> {
     try {
-      const newProduct = this.audioProductRepository.create({
-        ...product,
-        id: uuidv4(),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
+      const audioProduct = new AudioProductEntity();
+      Object.assign(audioProduct, audioProductData);
       
-      const savedProduct = await this.audioProductRepository.save(newProduct);
-      // Ensure we return a single entity, not an array
-      if (Array.isArray(savedProduct)) {
-        return new Success(savedProduct[0]);
-      }
-      return new Success(savedProduct);
+      const savedAudioProduct = await this.repository.save(audioProduct);
+      return new Success(this.mapToDomain(savedAudioProduct));
     } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al crear producto: ' + error.message
-      });
+      return new Failure({ type: 'VALIDATION_ERROR', message: 'Error creating audio product' });
     }
   }
 
   async findById(id: string): Promise<Result<AudioProduct, AudioProductError>> {
     try {
-      const product = await this.audioProductRepository.findOne({ where: { id } });
-      
-      if (!product) {
-        return new Failure({
-          type: 'PRODUCT_NOT_FOUND',
-          message: 'Producto no encontrado'
-        });
+      const audioProduct = await this.repository.findOne({ where: { id } });
+      if (!audioProduct) {
+        return new Failure({ type: 'PRODUCT_NOT_FOUND', message: 'Audio product not found' });
       }
-      
-      return new Success(product);
+      return new Success(this.mapToDomain(audioProduct));
     } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al buscar producto: ' + error.message
-      });
+      return new Failure({ type: 'VALIDATION_ERROR', message: 'Error fetching audio product' });
     }
   }
 
-  async update(id: string, productData: Partial<AudioProduct>): Promise<Result<AudioProduct, AudioProductError>> {
+  async update(id: string, audioProductData: UpdateAudioProductRequest): Promise<Result<AudioProduct, AudioProductError>> {
     try {
-      await this.audioProductRepository.update(id, {
-        ...productData,
-        updatedAt: new Date()
-      });
-      
-      const updatedProduct = await this.findById(id);
-      if (updatedProduct.isFailure()) {
-        return updatedProduct;
+      await this.repository.update(id, audioProductData);
+      const updatedAudioProduct = await this.repository.findOne({ where: { id } });
+      if (!updatedAudioProduct) {
+        return new Failure({ type: 'PRODUCT_NOT_FOUND', message: 'Audio product not found' });
       }
-      
-      return new Success(updatedProduct.value);
+      return new Success(this.mapToDomain(updatedAudioProduct));
     } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al actualizar producto: ' + error.message
-      });
+      return new Failure({ type: 'VALIDATION_ERROR', message: 'Error updating audio product' });
     }
   }
 
   async delete(id: string): Promise<Result<boolean, AudioProductError>> {
     try {
-      const result = await this.audioProductRepository.delete(id);
-      return new Success(result.affected !== 0);
+      const result = await this.repository.delete(id);
+      if (result.affected === 0) {
+        return new Failure({ type: 'PRODUCT_NOT_FOUND', message: 'Audio product not found' });
+      }
+      return new Success(true);
     } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al eliminar producto: ' + error.message
-      });
+      return new Failure({ type: 'VALIDATION_ERROR', message: 'Error deleting audio product' });
     }
   }
 
-  async findAll(request: any): Promise<Result<{ products: AudioProduct[]; total: number; page: number; limit: number; totalPages: number }, AudioProductError>> {
+  async search(searchDto: SearchAudioProductsRequest): Promise<Result<AudioProduct[], AudioProductError>> {
     try {
-      const { page = 1, limit = 10, genre, artist, minPrice, maxPrice, isActive, sortBy, sortOrder } = request;
-      
-      const queryBuilder = this.audioProductRepository.createQueryBuilder('product');
-      
-      // Aplicar filtros
-      if (genre) {
-        queryBuilder.andWhere('product.genre = :genre', { genre });
+      const queryBuilder = this.repository.createQueryBuilder('audioProduct');
+
+      if (searchDto.query) {
+        queryBuilder.andWhere('(audioProduct.title ILIKE :query OR audioProduct.description ILIKE :query)', { 
+          query: `%${searchDto.query}%` 
+        });
       }
-      
-      if (artist) {
-        queryBuilder.andWhere('product.artist ILIKE :artist', { artist: `%${artist}%` });
+
+      if (searchDto.artist) {
+        queryBuilder.andWhere('audioProduct.artist ILIKE :artist', { artist: `%${searchDto.artist}%` });
       }
-      
-      if (minPrice !== undefined) {
-        queryBuilder.andWhere('product.price >= :minPrice', { minPrice });
+
+      if (searchDto.genre) {
+        queryBuilder.andWhere('audioProduct.genre = :genre', { genre: searchDto.genre });
       }
-      
-      if (maxPrice !== undefined) {
-        queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice });
+
+      if (searchDto.minPrice !== undefined) {
+        queryBuilder.andWhere('audioProduct.price >= :minPrice', { minPrice: searchDto.minPrice });
       }
-      
-      if (isActive !== undefined) {
-        queryBuilder.andWhere('product.isActive = :isActive', { isActive });
+
+      if (searchDto.maxPrice !== undefined) {
+        queryBuilder.andWhere('audioProduct.price <= :maxPrice', { maxPrice: searchDto.maxPrice });
       }
-      
-      // Aplicar ordenamiento
-      if (sortBy) {
-        const order = sortOrder === 'desc' ? 'DESC' : 'ASC';
-        queryBuilder.orderBy(`product.${sortBy}`, order);
-      } else {
-        queryBuilder.orderBy('product.createdAt', 'DESC');
+
+      if (searchDto.isActive !== undefined) {
+        queryBuilder.andWhere('audioProduct.isActive = :isActive', { isActive: searchDto.isActive });
       }
-      
-      // Aplicar paginación
-      const skip = (page - 1) * limit;
-      queryBuilder.skip(skip).take(limit);
-      
-      const [products, total] = await queryBuilder.getManyAndCount();
-      const totalPages = Math.ceil(total / limit);
-      
-      return new Success({
-        products,
-        total,
-        page,
-        limit,
-        totalPages
-      });
+
+      const audioProducts = await queryBuilder.getMany();
+      return new Success(audioProducts.map(ap => this.mapToDomain(ap)));
     } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al obtener productos: ' + error.message
-      });
+      return new Failure({ type: 'VALIDATION_ERROR', message: 'Error searching audio products' });
     }
   }
 
-  async findByGenre(genre: string): Promise<Result<AudioProduct[], AudioProductError>> {
+  async findAll(): Promise<Result<AudioProduct[], AudioProductError>> {
     try {
-      const products = await this.audioProductRepository.find({ 
-        where: { genre: genre as any } 
-      });
-      return new Success(products);
+      const audioProducts = await this.repository.find();
+      return new Success(audioProducts.map(ap => this.mapToDomain(ap)));
     } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al buscar por género: ' + error.message
-      });
+      return new Failure({ type: 'VALIDATION_ERROR', message: 'Error fetching all audio products' });
     }
   }
 
-  async findByArtist(artist: string): Promise<Result<AudioProduct[], AudioProductError>> {
-    try {
-      const products = await this.audioProductRepository.find({ 
-        where: { artist: Like(`%${artist}%`) } 
-      });
-      return new Success(products);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al buscar por artista: ' + error.message
-      });
-    }
-  }
-
-  async findByTags(tags: string[]): Promise<Result<AudioProduct[], AudioProductError>> {
-    try {
-      const products = await this.audioProductRepository
-        .createQueryBuilder('product')
-        .where('product.tags && ARRAY[:...tags]', { tags })
-        .getMany();
-      
-      return new Success(products);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al buscar por tags: ' + error.message
-      });
-    }
-  }
-
-  async search(request: any): Promise<Result<{ products: AudioProduct[]; total: number; page: number; limit: number; totalPages: number }, AudioProductError>> {
-    try {
-      const { query, page = 1, limit = 10, genre, artist, minPrice, maxPrice, isActive, sortBy, sortOrder } = request;
-      
-      const queryBuilder = this.audioProductRepository.createQueryBuilder('product');
-      
-      // Aplicar búsqueda de texto
-      if (query) {
-        queryBuilder.andWhere(
-          '(product.title ILIKE :query OR product.description ILIKE :query OR product.artist ILIKE :query)',
-          { query: `%${query}%` }
-        );
-      }
-      
-      // Aplicar filtros adicionales
-      if (genre) {
-        queryBuilder.andWhere('product.genre = :genre', { genre });
-      }
-      
-      if (artist) {
-        queryBuilder.andWhere('product.artist ILIKE :artist', { artist: `%${artist}%` });
-      }
-      
-      if (minPrice !== undefined) {
-        queryBuilder.andWhere('product.price >= :minPrice', { minPrice });
-      }
-      
-      if (maxPrice !== undefined) {
-        queryBuilder.andWhere('product.price <= :maxPrice', { maxPrice });
-      }
-      
-      if (isActive !== undefined) {
-        queryBuilder.andWhere('product.isActive = :isActive', { isActive });
-      }
-      
-      // Aplicar ordenamiento
-      if (sortBy) {
-        const order = sortOrder === 'desc' ? 'DESC' : 'ASC';
-        queryBuilder.orderBy(`product.${sortBy}`, order);
-      } else {
-        queryBuilder.orderBy('product.createdAt', 'DESC');
-      }
-      
-      // Aplicar paginación
-      const skip = (page - 1) * limit;
-      queryBuilder.skip(skip).take(limit);
-      
-      const [products, total] = await queryBuilder.getManyAndCount();
-      const totalPages = Math.ceil(total / limit);
-      
-      return new Success({
-        products,
-        total,
-        page,
-        limit,
-        totalPages
-      });
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al buscar productos: ' + error.message
-      });
-    }
-  }
-
-  async findByPriceRange(minPrice: number, maxPrice: number): Promise<Result<AudioProduct[], AudioProductError>> {
-    try {
-      const products = await this.audioProductRepository.find({
-        where: {
-          price: Between(minPrice, maxPrice)
-        }
-      });
-      
-      return new Success(products);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al buscar por rango de precio: ' + error.message
-      });
-    }
-  }
-
-  async findByActiveStatus(isActive: boolean): Promise<Result<AudioProduct[], AudioProductError>> {
-    try {
-      const products = await this.audioProductRepository.find({ where: { isActive } });
-      return new Success(products);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al buscar por estado: ' + error.message
-      });
-    }
-  }
-
-  async findWithPagination(page: number, limit: number): Promise<Result<{ products: AudioProduct[]; total: number }, AudioProductError>> {
-    try {
-      const [products, total] = await this.audioProductRepository.findAndCount({
-        skip: (page - 1) * limit,
-        take: limit,
-        order: { createdAt: 'DESC' }
-      });
-      
-      return new Success({ products, total });
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al obtener productos paginados: ' + error.message
-      });
-    }
-  }
-
-  async existsByTitle(title: string, artist: string): Promise<Result<boolean, AudioProductError>> {
-    try {
-      const count = await this.audioProductRepository.count({
-        where: { title, artist }
-      });
-      
-      return new Success(count > 0);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al verificar título: ' + error.message
-      });
-    }
-  }
-
-  async existsByAudioUrl(audioUrl: string): Promise<Result<boolean, AudioProductError>> {
-    try {
-      const count = await this.audioProductRepository.count({
-        where: { audioUrl }
-      });
-      
-      return new Success(count > 0);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al verificar URL: ' + error.message
-      });
-    }
-  }
-
-  async updateStock(id: string, quantity: number, operation: 'increase' | 'decrease'): Promise<Result<AudioProduct, AudioProductError>> {
-    try {
-      const productResult = await this.findById(id);
-      if (productResult.isFailure()) {
-        return productResult;
-      }
-      
-      const product = productResult.value;
-      let newStock: number;
-      
-      if (operation === 'increase') {
-        newStock = product.stock + quantity;
-      } else {
-        if (product.stock < quantity) {
-          return new Failure({
-            type: 'INSUFFICIENT_STOCK',
-            message: 'Stock insuficiente para la operación'
-          });
-        }
-        newStock = product.stock - quantity;
-      }
-      
-      const updatedProduct = await this.audioProductRepository.save({
-        ...product,
-        stock: newStock,
-        updatedAt: new Date()
-      });
-      
-      return new Success(updatedProduct);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al actualizar stock: ' + error.message
-      });
-    }
-  }
-
-  async incrementPlayCount(id: string): Promise<Result<AudioProduct, AudioProductError>> {
-    try {
-      const productResult = await this.findById(id);
-      if (productResult.isFailure()) {
-        return productResult;
-      }
-      
-      const product = productResult.value;
-      const updatedProduct = await this.audioProductRepository.save({
-        ...product,
-        playCount: product.playCount + 1,
-        updatedAt: new Date()
-      });
-      
-      return new Success(updatedProduct);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al incrementar contador de reproducciones: ' + error.message
-      });
-    }
-  }
-
-  async incrementDownloadCount(id: string): Promise<Result<AudioProduct, AudioProductError>> {
-    try {
-      const productResult = await this.findById(id);
-      if (productResult.isFailure()) {
-        return productResult;
-      }
-      
-      const product = productResult.value;
-      const updatedProduct = await this.audioProductRepository.save({
-        ...product,
-        downloadCount: product.downloadCount + 1,
-        updatedAt: new Date()
-      });
-      
-      return new Success(updatedProduct);
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al incrementar contador de descargas: ' + error.message
-      });
-    }
-  }
-
-  async getProductStats(): Promise<Result<{
-    totalProducts: number;
-    activeProducts: number;
-    totalStock: number;
-    averagePrice: number;
-    topGenres: { genre: string; count: number }[];
-  }, AudioProductError>> {
-    try {
-      const totalProducts = await this.audioProductRepository.count();
-      const activeProducts = await this.audioProductRepository.count({ where: { isActive: true } });
-      
-      const stockResult = await this.audioProductRepository
-        .createQueryBuilder('product')
-        .select('SUM(product.stock)', 'totalStock')
-        .addSelect('AVG(product.price)', 'averagePrice')
-        .getRawOne();
-      
-      const topGenres = await this.audioProductRepository
-        .createQueryBuilder('product')
-        .select('product.genre', 'genre')
-        .addSelect('COUNT(*)', 'count')
-        .groupBy('product.genre')
-        .orderBy('count', 'DESC')
-        .limit(5)
-        .getRawMany();
-      
-      return new Success({
-        totalProducts,
-        activeProducts,
-        totalStock: parseInt(stockResult.totalStock) || 0,
-        averagePrice: parseFloat(stockResult.averagePrice) || 0,
-        topGenres: topGenres.map(g => ({ genre: g.genre, count: parseInt(g.count) }))
-      });
-    } catch (error) {
-      return new Failure({
-        type: 'VALIDATION_ERROR',
-        message: 'Error al obtener estadísticas: ' + error.message
-      });
-    }
+  private mapToDomain(entity: AudioProductEntity): AudioProduct {
+    return new AudioProduct(
+      entity.id,
+      entity.title,
+      entity.description,
+      entity.artist,
+      entity.genre,
+      entity.audioUrl,
+      entity.duration,
+      entity.format,
+      entity.bitrate,
+      entity.price,
+      entity.stock,
+      entity.isActive,
+      entity.tags,
+      entity.releaseDate,
+      entity.language,
+      entity.isExplicit,
+      entity.ageRestriction,
+      entity.playCount,
+      entity.downloadCount,
+      entity.createdAt,
+      entity.updatedAt,
+    );
   }
 }

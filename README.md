@@ -1,205 +1,185 @@
 # HatsuSound Backend
 
-Backend con arquitectura hexagonal (puertos y adaptadores) usando NestJS, TypeScript, Jest y PostgreSQL.
+Backend con arquitectura hexagonal para HatsuSound usando NestJS, TypeORM y PostgreSQL.
+
+## 🚀 Características
+
+- **Arquitectura Hexagonal**: Separación clara entre dominio, aplicación e infraestructura
+- **NestJS Framework**: Framework moderno y escalable para Node.js
+- **TypeORM**: ORM robusto con soporte para PostgreSQL
+- **JWT Authentication**: Sistema de autenticación seguro
+- **Wompi Integration**: Integración con pasarela de pagos Wompi
+- **Railway Oriented Programming**: Manejo de errores funcional
+- **Swagger Documentation**: API documentada automáticamente
 
 ## 🏗️ Arquitectura
 
-Este proyecto sigue los principios de la **Arquitectura Hexagonal** (también conocida como Arquitectura de Puertos y Adaptadores):
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    INFRASTRUCTURE LAYER                    │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ Controllers │  │  Services   │  │    Repositories     │ │
-│  │ (Adapters)  │  │ (Adapters)  │  │    (Adapters)       │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    APPLICATION LAYER                       │
-│  ┌─────────────────────────────────────────────────────────┐ │
-│  │                    Use Cases                            │ │
-│  │              (Application Services)                     │ │
-│  └─────────────────────────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      DOMAIN LAYER                         │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │  Entities   │  │  Services   │  │    Repositories     │ │
-│  │             │  │ (Ports)     │  │     (Ports)         │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Capas:
-
-- **Domain Layer**: Entidades de negocio, interfaces de repositorios y servicios
-- **Application Layer**: Casos de uso y lógica de aplicación
-- **Infrastructure Layer**: Implementaciones concretas (controladores, servicios, repositorios)
-
-## 🚀 Tecnologías
-
-- **Framework**: NestJS
-- **Lenguaje**: TypeScript
-- **Base de Datos**: PostgreSQL
-- **ORM**: TypeORM
-- **Testing**: Jest
-- **Documentación**: Swagger/OpenAPI
-- **Autenticación**: JWT + Passport
-
-## 📁 Estructura del Proyecto
-
 ```
 src/
-├── domain/                    # Capa de dominio
-│   ├── entities/             # Entidades de negocio
-│   ├── repositories/         # Interfaces de repositorios
-│   └── services/             # Interfaces de servicios
-├── application/              # Capa de aplicación
-│   └── use-cases/           # Casos de uso
-├── infrastructure/           # Capa de infraestructura
-│   ├── database/            # Configuración de base de datos
-│   ├── controllers/         # Controladores HTTP
-│   ├── services/            # Implementaciones de servicios
-│   ├── repositories/        # Implementaciones de repositorios
-│   ├── config/              # Configuraciones
-│   └── common/              # Utilidades comunes
-└── main.ts                  # Punto de entrada
+├── domain/           # Entidades y lógica de negocio
+├── application/      # Casos de uso y servicios de aplicación
+└── infrastructure/   # Implementaciones concretas (DB, HTTP, etc.)
 ```
 
 ## 🛠️ Instalación
 
-1. **Clonar el repositorio**
-   ```bash
-   git clone <repository-url>
-   cd HatsuSound
-   ```
+```bash
+# Clonar repositorio
+git clone <repository-url>
+cd HatsuSound
 
-2. **Instalar dependencias**
-   ```bash
-   npm install
-   ```
+# Instalar dependencias
+npm install
 
-3. **Configurar variables de entorno**
-   ```bash
-   cp .env.example .env
-   # Editar .env con tus configuraciones
-   ```
+# Configurar variables de entorno
+cp env.example .env
+# Editar .env con tus configuraciones
 
-4. **Configurar base de datos**
-   - Crear base de datos PostgreSQL
-   - Actualizar variables de entorno en `.env`
+# Iniciar base de datos
+npm run db:start
 
-5. **Ejecutar migraciones**
-   ```bash
-   npm run db:migrate
-   ```
+# Ejecutar migraciones
+npm run db:migrate
 
-## 🚀 Comandos Disponibles
+# Ejecutar seeds (opcional)
+npm run db:seed
+
+# Iniciar aplicación
+npm run start:dev
+```
+
+## 🔧 Scripts Disponibles
+
+### Desarrollo
+- `npm run start:dev` - Iniciar en modo desarrollo
+- `npm run build` - Construir aplicación
+- `npm run lint` - Ejecutar linter
+- `npm run format` - Formatear código
+
+### Base de Datos
+- `npm run db:start` - Iniciar PostgreSQL con Docker
+- `npm run db:stop` - Detener PostgreSQL
+- `npm run db:migrate` - Ejecutar migraciones
+- `npm run db:seed` - Ejecutar seeds
+
+### Testing
+- `npm run test` - Ejecutar tests unitarios
+- `npm run test:e2e` - Ejecutar tests E2E
+- `npm run test:checkout:unit` - Tests unitarios del checkout
+- `npm run test:checkout:e2e` - Tests E2E del checkout
+- `npm run test:checkout:all` - Todos los tests del checkout
+- `npm run test:checkout` - Script manual de testing (requiere JWT token)
+
+### Wompi
+- `npm run wompi:validate` - Validar configuración de Wompi
+
+## 🧪 Suite de Testing
+
+### Tests Unitarios ✅
+- **Ubicación**: `test/checkout.use-case.spec.ts`
+- **Cobertura**: 14 tests que cubren:
+  - Creación exitosa de checkout (intent y direct)
+  - Validación de datos de entrada
+  - Manejo de errores de Wompi
+  - Mapeo de estados de transacciones
+  - Generación de referencias y descripciones
+
+### Tests E2E ✅
+- **Ubicación**: `test/checkout.e2e-spec.ts`
+- **Cobertura**: 3 tests que cubren:
+  - Checkout sin token (intent)
+  - Checkout con token (direct)
+  - Manejo de errores de validación
+
+### Script Manual de Testing ✅
+- **Ubicación**: `src/scripts/test-checkout.ts`
+- **Uso**: `npm run test:checkout`
+- **Requisito**: JWT token válido en variable de entorno `JWT_TOKEN`
+
+## 🔐 Autenticación
+
+Para usar el script manual de testing, necesitas un JWT token válido:
 
 ```bash
-# Desarrollo
-npm run start:dev          # Ejecutar en modo desarrollo
-npm run start:debug        # Ejecutar en modo debug
+# Obtener token desde Swagger UI o endpoint de login
+export JWT_TOKEN="tu_jwt_token_aqui"
 
-# Producción
-npm run build              # Compilar el proyecto
-npm run start:prod         # Ejecutar en modo producción
-
-# Testing
-npm run test               # Ejecutar tests unitarios
-npm run test:watch         # Ejecutar tests en modo watch
-npm run test:cov           # Ejecutar tests con cobertura
-npm run test:e2e           # Ejecutar tests end-to-end
-
-# Base de datos
-npm run db:migrate         # Ejecutar migraciones
-npm run db:revert          # Revertir migraciones
-npm run db:generate        # Generar nueva migración
-
-# Linting y formateo
-npm run lint               # Ejecutar ESLint
-npm run format             # Formatear código con Prettier
+# Ejecutar tests
+npm run test:checkout
 ```
 
-## 📊 Variables de Entorno
+## 📊 Estado del Proyecto
+
+### ✅ Implementado y Funcionando
+- Arquitectura hexagonal completa
+- Sistema de checkout con Wompi
+- Soporte para pagos directos e intent
+- Tests unitarios completos
+- Tests E2E simplificados
+- Script manual de testing
+- Validación de datos robusta
+- Manejo de errores funcional
+
+### 🔄 En Desarrollo
+- Tests E2E completos con base de datos real
+- Integración completa con Wompi en producción
+
+## 🌐 Endpoints Principales
+
+### Checkout
+- `POST /checkout` - Crear sesión de checkout
+- `POST /checkout/wompi/create-token` - Crear token de método de pago (admin)
+
+### Autenticación
+- `POST /auth/login` - Iniciar sesión
+- `POST /auth/register` - Registrarse
+- `POST /auth/refresh` - Renovar token
+
+## 📝 Variables de Entorno
 
 ```env
-# Server
-PORT=3000
-NODE_ENV=development
-
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=hatsusound
-DB_USER=postgres
-DB_PASSWORD=password
+# Base de datos
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=password
+DATABASE_NAME=hatsusound
 
 # JWT
-JWT_SECRET=your-secret-key-here
+JWT_SECRET=your_jwt_secret
 JWT_EXPIRES_IN=24h
+
+# Wompi
+WOMPI_PUBLIC_KEY=your_wompi_public_key
+WOMPI_PRIVATE_KEY=your_wompi_private_key
+WOMPI_ENVIRONMENT=test
 ```
 
-## 🧪 Testing
+## 🚀 Despliegue
 
-El proyecto incluye configuración completa para testing:
+```bash
+# Construir para producción
+npm run build
 
-- **Jest** para tests unitarios e integración
-- **Supertest** para tests de API
-- **Cobertura de código** configurada
-- **Tests E2E** configurados
-
-## 📚 Documentación API
-
-Una vez ejecutada la aplicación, la documentación Swagger estará disponible en:
-
-```
-http://localhost:3000/api
+# Iniciar en producción
+npm run start:prod
 ```
 
-## 🔧 Desarrollo
+## 📚 Documentación Adicional
 
-### Crear nueva entidad
-
-1. Crear entidad en `src/domain/entities/`
-2. Crear interfaz de repositorio en `src/domain/repositories/`
-3. Crear interfaz de servicio en `src/domain/services/`
-4. Crear caso de uso en `src/application/use-cases/`
-5. Implementar repositorio en `src/infrastructure/repositories/`
-6. Implementar servicio en `src/infrastructure/services/`
-7. Crear controlador en `src/infrastructure/controllers/`
-8. Configurar módulo correspondiente
-
-### Estructura de un módulo típico
-
-```
-feature/
-├── feature.entity.ts           # Entidad de dominio
-├── feature.repository.interface.ts  # Puerto del repositorio
-├── feature.service.interface.ts     # Puerto del servicio
-├── feature.use-case.ts         # Caso de uso
-├── feature.repository.ts        # Adaptador del repositorio
-├── feature.service.ts           # Adaptador del servicio
-├── feature.controller.ts        # Adaptador del controlador
-└── feature.module.ts            # Módulo NestJS
-```
+- [API Usage Examples](docs/API_USAGE_EXAMPLES.md)
+- [Wompi Configuration](docs/WOMPI_CONFIGURATION.md)
+- [Security Guidelines](SECURITY.md)
+- [Architecture Details](ARCHITECTURE.md)
 
 ## 🤝 Contribución
 
 1. Fork el proyecto
-2. Crear rama para tu feature (`git checkout -b feature/AmazingFeature`)
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
 3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
 4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir un Pull Request
+5. Abre un Pull Request
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
-
-## 🆘 Soporte
-
-Si tienes alguna pregunta o problema, por favor abre un issue en el repositorio.
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.

@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Entity, Column, Index } from 'typeorm';
+import { BaseEntity } from '../base.entity';
 import { AudioFormat, AudioGenre, AgeRestriction } from '@/domain/entities/audio-product.entity';
 
 @Entity('audio_products')
@@ -10,10 +11,7 @@ import { AudioFormat, AudioGenre, AgeRestriction } from '@/domain/entities/audio
 @Index(['releaseDate'])
 @Index(['playCount'])
 @Index(['downloadCount'])
-export class AudioProduct {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class AudioProductEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255 })
   title: string;
 
@@ -80,10 +78,4 @@ export class AudioProduct {
 
   @Column({ type: 'int', default: 0, name: 'download_count' })
   downloadCount: number;
-
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
 }
