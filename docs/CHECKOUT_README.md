@@ -400,3 +400,4 @@ curl -X POST http://localhost:3000/checkout/webhook \
 ---
 
 **¿Necesitas ayuda?** Revisa los logs del servidor y ejecuta `npm run wompi:validate` para diagnosticar problemas de configuración.
+
