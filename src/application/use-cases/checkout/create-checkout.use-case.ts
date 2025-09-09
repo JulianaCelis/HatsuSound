@@ -191,17 +191,19 @@ export class CreateCheckoutUseCase extends BaseUseCase<
   }
 
   private async createDirectPaymentTransaction(request: CreateCheckoutRequest, reference: string): Promise<any> {
-    const wompiRequest = {
+    this.logger.log(`💳 Creando transacción de pago directo en Wompi: ${reference}`);
+    
+    // ✅ Usar el método CORRECTO de Wompi para pago directo
+    return await this.wompiService.createDirectCheckout({
       amount_in_cents: request.amount,
       currency: request.currency,
       customer_email: request.customerEmail,
+      reference,
       payment_method: {
         type: 'CARD',
-        token: request.paymentMethodToken,
+        token: request.paymentMethodToken!,
         installments: 1,
       },
-      acceptance_token: 'TOKEN_ACEPTACION', // El servicio lo reemplaza automáticamente
-      reference,
       customer_data: {
         phone_number: request.customerPhone,
         full_name: request.customerName || request.customerEmail.split('@')[0],
@@ -219,22 +221,17 @@ export class CreateCheckoutUseCase extends BaseUseCase<
         version: '1.0.0',
         payment_type: 'direct',
       },
-    };
-
-    this.logger.log(`💳 Creando transacción de pago directo en Wompi: ${reference}`);
-    return await this.wompiService.createTransaction(wompiRequest);
+    });
   }
 
   private async createIntentTransaction(request: CreateCheckoutRequest, reference: string): Promise<any> {
-    const wompiRequest = {
+    this.logger.log(`🔄 Creando transacción de intención en Wompi: ${reference}`);
+    
+    // ✅ Usar el método CORRECTO de Wompi para checkout de intención
+    return await this.wompiService.createIntentCheckout({
       amount_in_cents: request.amount,
       currency: request.currency,
       customer_email: request.customerEmail,
-      payment_method: {
-        type: 'CARD',
-        installments: 1, // Pago de contado
-      },
-      acceptance_token: 'TOKEN_ACEPTACION', // El servicio lo reemplaza automáticamente
       reference,
       customer_data: {
         phone_number: request.customerPhone,
@@ -253,10 +250,7 @@ export class CreateCheckoutUseCase extends BaseUseCase<
         version: '1.0.0',
         payment_type: 'intent',
       },
-    };
-
-    this.logger.log(`🔄 Creando transacción de intención en Wompi: ${reference}`);
-    return await this.wompiService.createTransaction(wompiRequest);
+    });
   }
 
   private async updateLocalTransaction(transactionId: string, wompiResponse: any): Promise<void> {

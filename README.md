@@ -157,6 +157,13 @@ WOMPI_ENVIRONMENT=test
 
 ## 🚀 Despliegue
 
+### **Verificación Previa**
+```bash
+# Verificar que todo esté listo para despliegue
+npm run check:deployment
+```
+
+### **Despliegue Local**
 ```bash
 # Construir para producción
 npm run build
@@ -164,6 +171,15 @@ npm run build
 # Iniciar en producción
 npm run start:prod
 ```
+
+### **Despliegue en Render**
+Tu proyecto está configurado para desplegarse automáticamente en Render:
+
+1. **Conectar repositorio** a Render (Blueprint)
+2. **Configurar variables de entorno** (ver `render-setup.md`)
+3. **Desplegar automáticamente**
+
+Para más detalles, consulta: [render-setup.md](render-setup.md)
 
 ## 📚 Documentación Adicional
 

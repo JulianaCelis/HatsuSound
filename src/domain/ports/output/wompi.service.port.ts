@@ -4,9 +4,10 @@ export interface WompiCreateTransactionRequest {
   amount_in_cents: number;
   currency: string;
   customer_email: string;
-  payment_method: {
+  payment_method?: {
     type: string;
     installments?: number;
+    token?: string;
   };
   acceptance_token: string;
   reference: string;
@@ -69,4 +70,43 @@ export interface WompiServicePort {
     expYear: string;
     cardHolderName: string;
   }): Promise<string>;
+  
+  // 👉 método para obtener el acceptance token real de Wompi
+  getAcceptanceToken(): Promise<string>;
+
+  // 🆕 MÉTODOS CORRECTOS DE WOMPI
+  // 👉 Checkout de intención (sin token) - flujo estándar de Wompi
+  createIntentCheckout(request: {
+    amount_in_cents: number;
+    currency: string;
+    customer_email: string;
+    reference: string;
+    customer_data?: {
+      phone_number?: string;
+      full_name?: string;
+    };
+    redirect_url?: string;
+    expires_at?: string;
+    metadata?: Record<string, any>;
+  }): Promise<any>;
+
+  // 👉 Checkout de pago directo (con token) - flujo estándar de Wompi
+  createDirectCheckout(request: {
+    amount_in_cents: number;
+    currency: string;
+    customer_email: string;
+    reference: string;
+    payment_method: {
+      type: string;
+      token: string;
+      installments: number;
+    };
+    customer_data?: {
+      phone_number?: string;
+      full_name?: string;
+    };
+    redirect_url?: string;
+    expires_at?: string;
+    metadata?: Record<string, any>;
+  }): Promise<any>;
 }
